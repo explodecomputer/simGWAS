@@ -23,6 +23,7 @@
 #' @param af Optional vector of allele frequencies. If R_LD is not supplied, af can be a scalar, vector or function.
 #'If af is a function it should take a single argument (n) and return a vector of n allele frequencies (See Examples).
 #'If R_LD is supplied, af must be a vector with length equal to the size of the supplied LD pattern (See Examples).
+#' @param S Vector of selection coefficients for each treat according to the Bayes S model, length M. Default = NULL, which defaults to neutral model. \code{af} must be supplied if S is to be used
 #'@param sporadic_pleiotropy Allow sporadic pleiotropy between traits. Defaults to TRUE.
 #'@param h2_exact If TRUE, the heritability of each trait will be exactly h2.
 #'@param pi_exact If TRUE, the number of direct effect SNPs for each trait will be exactly equal to round(pi*J).
@@ -92,6 +93,7 @@ sim_lf <- function(F_mat,
                    R_obs = NULL,
                    R_LD = NULL,
                    af = NULL,
+                   S = NULL,
                    sporadic_pleiotropy = TRUE,
                    h2_exact = FALSE,
                    pi_exact = FALSE,
@@ -107,6 +109,9 @@ sim_lf <- function(F_mat,
   h2_trait <- check_scalar_or_numeric(h2_trait, "h2_trait", M)
   h2_trait <- check_01(h2_trait)
 
+  if(!is.null(S) & is.null(af)) {
+    stop("af must be supplied if S is not null")
+  }
 
   omega <- check_scalar_or_numeric(omega, "omega", M)
   omega <- check_01(omega)
@@ -223,7 +228,8 @@ sim_lf <- function(F_mat,
                                  h2_exact = h2_exact,
                                  snp_info = snp_info,
                                  R_LD = R_LD,
-                                 af = af)
+                                 af = af,
+                                 S = S)
 
 
 
@@ -237,7 +243,8 @@ sim_lf <- function(F_mat,
                                  h2_exact = h2_exact,
                                  snp_info = snp_info,
                                  R_LD = R_LD,
-                                 af = af)
+                                 af = af,
+                                 S = S)
 
 
   # Compute standardized effects

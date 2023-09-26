@@ -22,7 +22,7 @@
 #'@param af Optional vector of allele frequencies. If R_LD is not supplied, af can be a scalar, vector or function.
 #'If af is a function it should take a single argument (n) and return a vector of n allele frequencies (See Examples).
 #'If R_LD is supplied, af must be a vector with length equal to the size of the supplied LD pattern (See Examples).
-#'@param snp_effect_function Optional function to generate variant.
+#'@param snp_effect_function Optional function to generate variant effect distributions.
 #'\code{snp_effect_function} can be a single function
 #' or list of functions of length equal to the number of traits.
 #'@param snp_info Optional \code{data.frame} of variant information to be passed to variant effect functions. If \code{R_LD} is
@@ -131,6 +131,7 @@ sim_mv <- function(N,
                    R_LD = NULL,
                    af = NULL,
                    snp_effect_function = "normal",
+                   S = NULL,
                    snp_info = NULL,
                    sporadic_pleiotropy = TRUE,
                    pi_exact = FALSE,
@@ -173,6 +174,7 @@ sim_mv <- function(N,
                 R_obs = R_obs,
                 R_LD = R_LD,
                 af = af,
+                S = S,
                 sporadic_pleiotropy = sporadic_pleiotropy,
                 h2_exact = h2_exact,
                 pi_exact = pi_exact,

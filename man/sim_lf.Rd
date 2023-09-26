@@ -18,6 +18,7 @@ sim_lf(
   R_obs = NULL,
   R_LD = NULL,
   af = NULL,
+  S = NULL,
   sporadic_pleiotropy = TRUE,
   h2_exact = FALSE,
   pi_exact = FALSE,
@@ -60,6 +61,8 @@ All elements should be correlation matrices, meaning that they have 1 on the dia
 \item{af}{Optional vector of allele frequencies. If R_LD is not supplied, af can be a scalar, vector or function.
 If af is a function it should take a single argument (n) and return a vector of n allele frequencies (See Examples).
 If R_LD is supplied, af must be a vector with length equal to the size of the supplied LD pattern (See Examples).}
+
+\item{S}{Vector of selection coefficients for each treat according to the Bayes S model, length M. Default = NULL, which defaults to neutral model. \code{af} must be supplied if S is to be used}
 
 \item{sporadic_pleiotropy}{Allow sporadic pleiotropy between traits. Defaults to TRUE.}
 

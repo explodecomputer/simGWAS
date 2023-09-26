@@ -16,6 +16,7 @@ sim_mv(
   R_LD = NULL,
   af = NULL,
   snp_effect_function = "normal",
+  S = NULL,
   snp_info = NULL,
   sporadic_pleiotropy = TRUE,
   pi_exact = FALSE,
@@ -56,7 +57,7 @@ All elements should be correlation matrices, meaning that they have 1 on the dia
 If af is a function it should take a single argument (n) and return a vector of n allele frequencies (See Examples).
 If R_LD is supplied, af must be a vector with length equal to the size of the supplied LD pattern (See Examples).}
 
-\item{snp_effect_function}{Optional function to generate variant.
+\item{snp_effect_function}{Optional function to generate variant effect distributions.
 \code{snp_effect_function} can be a single function
 or list of functions of length equal to the number of traits.}
 

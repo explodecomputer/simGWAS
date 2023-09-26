@@ -2,6 +2,8 @@
 
 S3method(print,sim_mv)
 export("%>%")
+export(G_from_df)
+export(G_from_text)
 export(compute_h2)
 export(fast_lm)
 export(fixed_to_scale_fam)

@@ -4,12 +4,16 @@
 \alias{mixnorm_to_scale_fam}
 \title{mixnorm_to_scale_fam}
 \usage{
-mixnorm_to_scale_fam(sigma, pi)
+mixnorm_to_scale_fam(sigma, pi, S = NULL, snpinfo = NULL)
 }
 \arguments{
 \item{sigma}{sigma}
 
 \item{pi}{pi}
+
+\item{S}{selection coefficient, default = 1 when set to NULL, if not null then requires allele frequencies in snpinfo}
+
+\item{snpinfo}{data frame with vector of allele frequencies, default=NULL}
 }
 \description{
 mixnorm_to_scale_fam

@@ -2,12 +2,17 @@
 #' 
 #' @param sigma sigma
 #' @param pi pi
+#' @param S selection coefficient, default = 1 when set to NULL, if not null then requires allele frequencies in snpinfo
+#' @param snpinfo data frame with vector of allele frequencies, default=NULL
 #'@export
-mixnorm_to_scale_fam <- function(sigma, pi){
+mixnorm_to_scale_fam <- function(sigma, pi, S=NULL, snpinfo=NULL){
   K <- length(sigma)
   sigma <- check_scalar_or_numeric(sigma, "sigma", K)
   pi <- check_scalar_or_numeric(pi, "pi", K)
   check_01(pi, "pi")
+  if(!is.null(S)) {
+    snpinfo <- check_snpinfo()
+  }
 
   if(!all(sigma >=0)) stop("sigma must all be >= 0.")
 
@@ -34,10 +39,12 @@ mixnorm_to_scale_fam <- function(sigma, pi){
 #'@param sd Standard deviations
 #'@param pi Mixture proportions
 #'@param mu Means
+#'@param S selection coefficient, default = 1 when set to NULL, if not null then requires allele frequencies in snpinfo
+#'@param snpinfo data frame with vector of allele frequencies, default=NULL
 #'@param return.Z if TRUE, also return a vector of indicators indicating which of the K classes each sample belongs to
 #'@return If return.Z=TRUE, returns a list with elements beta (samples) and Z (indicators). Otherwise returns a length n vector of samples.
 #'@export
-rnormalmix <- function(n, sd, pi, mu =0, return.Z=FALSE){
+rnormalmix <- function(n, sd, pi, mu =0, S = 1, snpinfo=NULL, return.Z=FALSE){
   K <- length(sd)
   sd <- check_scalar_or_numeric(sd, "sd", K)
   pi <- check_scalar_or_numeric(pi, "pi", K)
@@ -47,13 +54,18 @@ rnormalmix <- function(n, sd, pi, mu =0, return.Z=FALSE){
   pi <- pi/tot
   if(!all(sd >=0)) stop("sd must all be >= 0.")
 
+  if(is.null(snpinfo)) {
+    snpvar <- 1
+  } else {
+    snpvar <- 2 * snpinfo$AF * (1-snpinfo$AF)
+  }
 
   Z <- sample(1:K, size=n, replace = TRUE, prob=pi)
   beta <- rep(NA, n)
   for(k in 1:K){
     nk <- sum(Z==k)
     if(nk==0) next
-    beta[Z==k] <- rnorm(n=nk , mean=mu[k], sd = sd[k])
+    beta[Z==k] <- rnorm(n=nk , mean=mu[k], sd = sqrt(snpvar^S)) %>% scale() %>% drop() %>% {. * sd[k]}
   }
   if(return.Z) return(list("beta"=beta, "Z"=Z))
   return(beta)

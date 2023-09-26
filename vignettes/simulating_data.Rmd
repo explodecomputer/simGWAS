@@ -25,7 +25,7 @@ set.seed(1)
 
 ## Introduction
 
-This vignette demonstrates how to use the `sim_mv` function to simulate data a few different types of GWAS data.
+This vignette demonstrates how to use the `sim_mv` function to simulate data for a few different types of GWAS summary data or individual level data. The design of the package implies that multiple phenotypes can be simulated simultaneously for a given causal relationship, they can have varying sample sizes and degrees of sample overlap, and the variants can have specified patterns of linkage disequilibrium.
 
 ## Introduction to `sim_mv`
 
@@ -48,8 +48,8 @@ The `sim_mv` function has five required arguments:
 + `N`: The GWAS sample size for each trait. This can be a scalar, vector, matrix, or data frame. If a vector, `N` should have length equal to $M$. If there are overlapping samples between GWAS, `N` should be an $M \times M$ matrix or data frame  with format described in the "Sample Overlap" section below. 
 + `J`: The number of SNPs to simulate (scalar).
 + `h2`: The hertiability of each trait. This can be a scalar or a length $M$ vector.
-+ `pi`: The proportion of SNPs that have a direct effect on each trait. This can be a scalar, a length $M$ vector, or a matrix with $J \times M$ matrix (more details on the matrix format can be found in the Effect Size Distribution vignette).
-+ `G`: A matrix specifying direct causal effects between traits. `G` should be an $M\times M$ matrix described below. Alternatively, if there are no causal effects between any traits, `G` can be given as the positive integer $M$. This is equivalent to `G = matrix(0, nrow = M, ncol = M)`. 
++ `pi`: The proportion of SNPs that have a direct effect on each trait. This can be a scalar, a length $M$ vector, or a matrix with $J \times M$ dimension (more details on the matrix format can be found in the Effect Size Distribution vignette).
++ `G`: A matrix specifying direct causal effects between traits, on the scale of each trait having variance of 1. `G` should be an $M\times M$ matrix described below. Alternatively, if there are no causal effects between any traits, `G` can be given as the positive integer $M$. This is equivalent to `G = matrix(0, nrow = M, ncol = M)`. 
 
 
 There are additional optional arguments:
@@ -107,11 +107,7 @@ The order of the columns of all results corresponds to the order of variables in
 ## Specifying Causal Relationships Between Traits
 
 The matrix `G` specifies a linear structural equation model for a set of traits. 
-To generate a set of $M$ traits with no causal relationships, `G` can be set either equal to `M` or to an $M\times M$ matrix of 0's. Otherwise,
-`G` must be an $M \times M$ matrix with `G[i,j]` specifying the direct linear effect of trait $i$ on trait $j$. The
-diagonal entries of $G$ should be 0 (no self effects). An error will be generated if `G` specifies a graph that contains cycles. Since all traits have variance 
-equal to 1, so `G[i,j]^2` is the proportion of trait $j$ variance explained by 
-the direct effect of trait $i$. 
+To generate a set of $M$ traits with no causal relationships, `G` can be set either equal to `M` or to an $M\times M$ matrix of 0's. Otherwise, `G` must be an $M \times M$ matrix with `G[i,j]` specifying the direct linear effect of trait $i$ on trait $j$. The diagonal entries of $G$ should be 0 (no self effects). An error will be generated if `G` specifies a graph that contains cycles. Since all traits have variance equal to 1, `G[i,j]^2` is the proportion of trait $j$ variance explained by the direct effect of trait $i$. 
 
 For example, the matrix
 
@@ -120,7 +116,7 @@ G <- matrix(c(0, sqrt(0.25), 0, sqrt(0.15),
               0, 0, 0, sqrt(0.1), 
               sqrt(0.2), 0, 0, -sqrt(0.3), 
               0, 0, 0, 0), nrow = 4, byrow = TRUE)
-colnames(G) <- row.names(G) <- c("X", "Y", "Z", "W")
+colnames(G) <- rownames(G) <- c("X", "Y", "Z", "W")
 G
 ```
 
@@ -219,10 +215,58 @@ group_by_all(A) %>%
   arrange(-n)
 ```
 
+By contrast, by allowing sporadic pleiotropy, some variants have direct effects on more than one trait
+
+```{r}
+sim_dat2a <- sim_mv(G = G,
+                   J = 50000,
+                  N = 60000,  
+                  h2 = c(0.3, 0.3, 0.5, 0.4), 
+                  pi = 1000/50000, 
+                  pi_exact = TRUE, 
+                  h2_exact = TRUE, 
+                  sporadic_pleiotropy = TRUE)
+
+sim_dat2a$Sigma_G
+A <- data.frame(sim_dat2a$direct_SNP_effects_joint != 0) 
+names(A) <- paste0("Direct ", c("X", "Y", "Z", "W"), " effect")
+group_by_all(A) %>% 
+  summarize(n = n()) %>% 
+  arrange(-n)
+
+```
 
 
 
-### Generating $G$ from "XYZ" mode.
+### Generating $G$
+
+#### Convenience functions for building G
+
+Specifying causal relationships in a matrix can be slightly cumbersome so alternatively a text-based approach can be used e.g. reproducing the matrix above can be achieved using text-based syntax like this:
+
+```{r}
+"Z -> X sqrt(0.2)
+Z -> W -sqrt(0.3)
+X -> W sqrt(0.15)
+X -> Y sqrt(0.25)
+Y -> W sqrt(0.1)" %>%
+  G_from_text()
+```
+
+or from a data frame
+
+```{r}
+dplyr::tribble(
+  ~i, ~j, ~eff,
+  "Z", "X", sqrt(0.2),
+  "Z", "W", -sqrt(0.3),
+  "X", "W", sqrt(0.15),
+  "X", "Y", sqrt(0.25),
+  "Y", "W", sqrt(0.1)
+) %>% G_from_df()
+```
+
+#### "XYZ" mode.
 
 The function `xyz_to_G` will generate a matrix, $G$, corresponding to a specific "XYZ" DAG form. 
 In the "XYZ" DAG, there is an exposure ($X$), an outcome ($Y$), and $M-2$ other variables, $Z_1, \dots, Z_{M-2}$.
@@ -257,7 +301,6 @@ generates the matrix corresponding to the graph below:
 
 
 ```{r, echo=FALSE, fig.align='center', fig.width = 5}
-
 myd <- melt(myG) %>%
      filter(value !=0) %>%
      rename(from = Var1, to = Var2)

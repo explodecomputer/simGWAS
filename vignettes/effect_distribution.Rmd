@@ -122,6 +122,7 @@ sim_dat3 <- sim_mv(G = 1,
                    pi = pi_mat, 
                    af = af)
 ```
+
 To verify that we observe the desired effect, we plot the proportion of effect
 variants by bins of minor allele frequency.
 
@@ -141,6 +142,25 @@ snp_dat$maf_min <- x[snp_dat$maf_min]
 with(snp_dat, plot(maf_min, eff_prob))
 ```
 
+```{r}
+load_all()
+sim_dat3 <- sim_mv(G = 1,
+                   J = 50000,
+                   N = 60000,  
+                   h2 = 0.8, 
+                   pi = 1)
+                   
+                   ,
+                   af = af,
+                   S = 0)
+
+with(sim_dat3, sum(beta_hat[,1]^2 * snp_info$AF * (1-snp_info$AF)))
+with(sim_dat3, sum(beta_hat[,1]^2))
+
+str(sim_dat3)
+hist(sim_dat3$beta_hat)
+with(sim_dat3, plot(abs(beta_hat) ~ snp_info$AF))
+```
 
 ## Controlling Effect Size Distribution
 
@@ -230,6 +250,27 @@ sum(x^2) # should be about 0.2
 ```
 
 
+### Including selection coefficients
+
+The mixture of normals can also be adapted to use the Bayes S method for relating allele frequencies and effect sizes by the selection coefficient S
+
+$$
+E(h^2_j) = x(2f_j(1-f_j))^S
+$$
+
+
+```{r}
+set.seed(10)
+myf <- mixnorm_to_scale_fam(sigma = c(1), pi = c(0.3), S=0.1, )
+sim_dat8 <- sim_mv(G = 1,
+                    J = 50000, 
+                    N = 0, 
+                    h2 = 0.3, 
+                    pi = 1, 
+                    snp_effect_function = myf,
+                    af = function(n){rbeta(n, 1, 5)},
+                    snp_info = my_snp_info)
+```
 
 ### Providing a fixed list of relative effect sizes
 
@@ -325,6 +366,8 @@ hist(std_effects2[!std_effects2 == 0], breaks = 30, freq = F, main = "Standardiz
 
 Below is some code that combines some of the effect size specification options we have seen to simulate GWAS data for one LD block and two traits. The first trait will have two effect variants that have equal standardized effect size. The second trait has two effect variants with different effect sizes. One pair of variants co-localizes across traits. Simulations of this type could be used to test co-localization methods.  Since we are looking at only one block, we will set the heritability of the block to be a reasonable amount of heritability provided by two variants, 6e-4 for one trait and 1e-3 for the other. 
 
+Examine the LD data
+
 ```{r}
 data("ld_mat_list")
 data("AF")
@@ -340,6 +383,8 @@ as.matrix(ld_block) %>%
     ggplot(aes(x = Var1, y = Var2, fill = value))  + 
       geom_tile() + scale_fill_gradient2()
 ```
+
+Simulate effects
 
 ```{r}
 ## Set causal variants exactly
@@ -388,7 +433,7 @@ abline(v = c(75, 130), h = 0)
 ```
 
 
-### Effect Distributions that Depend on Allele Frequency and Other Features
+### Custom effect Distributions that Depend on Allele Frequency and Other Features
 
 As mentioned above, the SNP effect function will be given three parameters: number of variants (`n`), 
 standard deviation (square root of total variance explained) (`sd`), and SNP information (`snp_info`). 
@@ -402,7 +447,9 @@ or we might want to allow the expected heritability explained depend on an annot
 
 For this example, we assume that we would like to use the heritability model
 
-$$E[h_j^2] = x(f_j (1-f_j))^{0.75}(0.1 A_{1,j} + 0.13 A_{2,j} + 0.9)$$
+$$
+E[h_j^2] = x(f_j (1-f_j))^{0.75}(0.1 A_{1,j} + 0.13 A_{2,j} + 0.9)
+$$
 
 where $x$ is a scalar that depends on the total heritability and $A_{1,j}$ and $A_{2,j}$ 
 are the values of two annotations for variant $j$. 
@@ -458,6 +505,7 @@ The annotations will be included in the `snp_info` data frame included in the ou
 ```{r}
 head(sim_dat8$snp_info)
 ```
+
 Let's verify that our function did what we thought it would by plotting the average heritability explained by bins of $(f_j (1-f_j))^{0.75}(0.1 A_{1,j} + 0.13 A_{2,j} + 0.9)$.
 
 ```{r}

@@ -4,7 +4,7 @@
 \alias{rnormalmix}
 \title{Simulate from a normal mixture distribution}
 \usage{
-rnormalmix(n, sd, pi, mu = 0, return.Z = FALSE)
+rnormalmix(n, sd, pi, mu = 0, S = 1, snpinfo = NULL, return.Z = FALSE)
 }
 \arguments{
 \item{n}{Number of points to simulate}
@@ -14,6 +14,10 @@ rnormalmix(n, sd, pi, mu = 0, return.Z = FALSE)
 \item{pi}{Mixture proportions}
 
 \item{mu}{Means}
+
+\item{S}{selection coefficient, default = 1 when set to NULL, if not null then requires allele frequencies in snpinfo}
+
+\item{snpinfo}{data frame with vector of allele frequencies, default=NULL}
 
 \item{return.Z}{if TRUE, also return a vector of indicators indicating which of the K classes each sample belongs to}
 }

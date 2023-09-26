@@ -362,7 +362,7 @@ check_effect_function_list <- function(snp_effect_function, M, snp_info = NULL){
   }
 }
 
-check_snp_effect_function <- function(snp_effect_function, snp_info = NULL){
+check_snp_effect_function <- function(snp_effect_function, snp_info = NULL, S = NULL){
 
   if(!(inherits(snp_effect_function, "character") | inherits(snp_effect_function, "function")) ){
     stop("snp_effect_function should either be 'normal', a function, or a vector.")
@@ -377,10 +377,15 @@ check_snp_effect_function <- function(snp_effect_function, snp_info = NULL){
       stop(paste0("Failed to run snp_effect_function with error: ", e) )
     })
     return(snp_effect_function)
-  }else if(snp_effect_function == "normal"){
-    f <- function(n, sd, ...){
-      rnorm(n =n, mean = 0, sd = sd/sqrt(n))
-    }
+  } else if(snp_effect_function == "normal") {
+      f <- function(n, sd, ...){
+        args <- list(...)
+        if(all(c("S", "snp_info") %in% names(args))) {
+          rnorm(n = n, mean = 0, sd = sqrt((2*args[["snp_info"]][["AF"]] * (1-args[["snp_info"]][["AF"]]))^args[["S"]])) %>% scale() %>% drop() %>% {. * sd/sqrt(n)}
+        } else {
+          rnorm(n = n, mean = 0, sd = sd/sqrt(n))
+        }
+      }
     return(f)
   }
 }

@@ -5,7 +5,8 @@ sample_effects_matrix <- function(J, M, pi,
                                   h2_exact,
                                   snp_info,
                                   R_LD = NULL,  # R_LD and af only needed if using h2_exact
-                                  af = NULL){
+                                  af = NULL,
+                                  S = NULL){
 
   # Skip most argument checks for internal function
   # We do check pi here
@@ -44,21 +45,32 @@ sample_effects_matrix <- function(J, M, pi,
   }else{
     sig_j <- sqrt( (1/(pi*J)) * sigma^2)
   }
-
+  if(is.null(S)) {
+    S <- 0
+  }
+  S <- check_scalar_or_numeric(S, "S", M)
+  print(S)
   if(pi_mat){
       eff <- purrr::map(seq(M), function(i){
-      t <- rbinom(n=J, size=1, prob = pi[,i])
-      n <- sum(t==1)
-      if(n > 0) t[t==1] <- f[[i]](n=n, sd = sqrt(n)*sig_j[i], snp_info = snp_info[t==1,])
-      return(t)
-    }) %>% do.call(cbind, .)
+        t <- rbinom(n=J, size=1, prob = pi[,i])
+        n <- sum(t==1)
+        if(n > 0) {
+          message("A")
+          print(S)
+          print(i)
+          print(f)
+          t[t==1] <- f[[i]](n=n, sd = sqrt(n)*sig_j[i], S = S[i], snp_info = snp_info[t==1,])
+        }
+        return(t)
+      }) %>% do.call(cbind, .)
   }else if(pi_exact & sporadic_pleiotropy){
     eff <- purrr::map(seq(M), function(i){
       n <- round(pi[i]*J)
       val <- rep(0, J)
       if(n > 0){
+        message("B")
         t <- sample(seq(J), size = n, replace = FALSE)
-        val[t] <- f[[i]](n=n, sd = sqrt(n)*sig_j[i], snp_info = snp_info[t,])
+        val[t] <- f[[i]](n=n, sd = sqrt(n)*sig_j[i], S = S[i], snp_info = snp_info[t,])
       }
       return(val)
     }) %>% do.call(cbind, .)
@@ -66,7 +78,10 @@ sample_effects_matrix <- function(J, M, pi,
     eff <- purrr::map(seq(M), function(i){
       t <- rbinom(n=J, size=1, prob = pi[i])
       n <- sum(t==1)
-      if(n > 0) t[t==1] <- f[[i]](n=n, sd = sqrt(n)*sig_j[i], snp_info = snp_info[t==1,])
+      if(n > 0) {
+        message("C")
+        t[t==1] <- f[[i]](n=n, sd = sqrt(n)*sig_j[i], S = S[i], snp_info = snp_info[t==1,])
+      }
       return(t)
     }) %>% do.call(cbind, .)
   }else{
@@ -89,7 +104,10 @@ sample_effects_matrix <- function(J, M, pi,
       t <- which(nz_ix == i)
       n <- length(t)
       val <- rep(0, J)
-      if(n > 0) val[t] <- f[[i]](n=n, sd = sig_j[i], snp_info = snp_info[t,])
+      if(n > 0) {
+        message("D")
+        val[t] <- f[[i]](n=n, sd = sig_j[i], S = S[i], snp_info = snp_info[t,])
+      }
       return(val)
     }) %>% do.call(cbind, .)
   }
@@ -104,6 +122,4 @@ sample_effects_matrix <- function(J, M, pi,
   }
   return(eff)
 }
-
-
 
