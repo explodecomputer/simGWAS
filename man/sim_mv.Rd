@@ -61,6 +61,8 @@ If R_LD is supplied, af must be a vector with length equal to the size of the su
 \code{snp_effect_function} can be a single function
 or list of functions of length equal to the number of traits.}
 
+\item{S}{Vector of selection coefficients for each treat according to the Bayes S model, length M. Default = NULL, which defaults to neutral model. \code{af} must be supplied if S is to be used}
+
 \item{snp_info}{Optional \code{data.frame} of variant information to be passed to variant effect functions. If \code{R_LD} is
 specified, \code{snp_info} should have number of rows equal to the size of the supplied LD pattern. Otherwise \code{snp_info}
 should have \code{J} rows.}

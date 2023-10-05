@@ -49,16 +49,11 @@ sample_effects_matrix <- function(J, M, pi,
     S <- 0
   }
   S <- check_scalar_or_numeric(S, "S", M)
-  print(S)
   if(pi_mat){
       eff <- purrr::map(seq(M), function(i){
         t <- rbinom(n=J, size=1, prob = pi[,i])
         n <- sum(t==1)
         if(n > 0) {
-          message("A")
-          print(S)
-          print(i)
-          print(f)
           t[t==1] <- f[[i]](n=n, sd = sqrt(n)*sig_j[i], S = S[i], snp_info = snp_info[t==1,])
         }
         return(t)
@@ -68,7 +63,6 @@ sample_effects_matrix <- function(J, M, pi,
       n <- round(pi[i]*J)
       val <- rep(0, J)
       if(n > 0){
-        message("B")
         t <- sample(seq(J), size = n, replace = FALSE)
         val[t] <- f[[i]](n=n, sd = sqrt(n)*sig_j[i], S = S[i], snp_info = snp_info[t,])
       }
@@ -79,7 +73,6 @@ sample_effects_matrix <- function(J, M, pi,
       t <- rbinom(n=J, size=1, prob = pi[i])
       n <- sum(t==1)
       if(n > 0) {
-        message("C")
         t[t==1] <- f[[i]](n=n, sd = sqrt(n)*sig_j[i], S = S[i], snp_info = snp_info[t==1,])
       }
       return(t)
@@ -105,13 +98,11 @@ sample_effects_matrix <- function(J, M, pi,
       n <- length(t)
       val <- rep(0, J)
       if(n > 0) {
-        message("D")
         val[t] <- f[[i]](n=n, sd = sig_j[i], S = S[i], snp_info = snp_info[t,])
       }
       return(val)
     }) %>% do.call(cbind, .)
   }
-
   if(h2_exact){
     h2_eff <- compute_h2(b_joint = eff,
                          geno_scale = "sd",

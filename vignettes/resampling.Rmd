@@ -57,7 +57,7 @@ In the simplest scenario, we want to simulate performing a new GWAS or collectin
 
 ### Resampling Summary Statistics from the Same Population
 
-To resample summary statistics, we can use `resample_sumstats`. Here, we will regenerate data assuming that samples for the new GWAS are totally overlapping.
+To resample summary statistics, we can use `resample_sumstats`. Here, we will regenerate data assuming that samples for the two traits in the new GWAS are totally overlapping.
 
 ```{r}
 N1 <- matrix(50000, nrow = 2, ncol = 2)
@@ -168,14 +168,16 @@ phenos_only$Y
 
 Both `resample_sumstats` and `resample_inddata` can be used as above with different LD and allele frequencies than used to create the original object. However, there are some special considerations about trait variance and scaling that we will discuss in this section.
 
-
 ### Understanding Effect Size Units
 
 To understand resampled data that use different LD or allele frequencies than the original data, it is important to understand the units of effect sizes produced by `sim_mv`. `sim_mv` always assumes that phenotype variance is equal to 1, so the interpretation of the effects in `beta_joint` is the change in phenotype in units of phenotype SD per change in genotype in units of either allele or genotype SD. To see the genotype unit, we can check the `geno_scale` object. For example,
+
 ```{r}
 orig_dat$geno_scale
 ```
-By default, `sim_mv` will use the per-allele scale if allele frequencies are available and otherwise use the per-SD scale. We can also check the the phenotypes are scaled to unit variance in `pheno_sd` which will always be a vector of 1's if the object was produced by `sim_mv`.
+
+By default, `sim_mv` will use the per-allele scale if allele frequencies are available and otherwise use the per-SD scale. We can also check the phenotypes are scaled to unit variance in `pheno_sd` which will always be a vector of 1's if the object was produced by `sim_mv`.
+
 ```{r}
 orig_dat$pheno_sd
 ```
@@ -210,6 +212,7 @@ orig_dat$Sigma_G
 new_dat2$Sigma_E
 orig_dat$Sigma_E
 ```
+
 Note that the features that are kept constant are the environmental variance `Sigma_E` and the per-allele joint effects, `beta_joint`. 
 
 ### Changing Environmental Variance or Covariance
@@ -249,7 +252,7 @@ new_dat4$Sigma_E
 
 ### Rescaling Effect Size Units
 
-If for any reason we want to change the units of effects in an object produced by `sim_mv` or `resmaple_sumstats`, we can use `rescale_sumstats`. For example, in the code below, we rescale the effects in `orig_dat` to be on the per-SD scale. Note that by doing this, we will delete the allele frequency information in the `snp_info` table. This is because allele frequency is irrelevant for per-SD scaled effects.  To convert back to per-allele scale, we would need to supply the allele frequency.
+If for any reason we want to change the units of effects in an object produced by `sim_mv` or `resample_sumstats`, we can use `rescale_sumstats`. For example, in the code below, we rescale the effects in `orig_dat` to be on the per-SD scale. Note that by doing this, we will delete the allele frequency information in the `snp_info` table. This is because allele frequency is irrelevant for per-SD scaled effects.  To convert back to per-allele scale, we would need to supply the allele frequency.
 
 ```{r}
 

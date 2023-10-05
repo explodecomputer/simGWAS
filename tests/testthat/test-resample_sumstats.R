@@ -65,7 +65,7 @@ test_that("resample_sumstats executes", {
   expect_equal(dat2$direct_SNP_effects_marg, S %*% L %*% solve(S) %*% dat2$direct_SNP_effects_joint)
 
 
-  R_obsn <- matrix(-0.8, nrow = 2, ncol = 2)
+  R_obsn <- matrix(-0.9, nrow = 2, ncol = 2)
   diag(R_obsn) <- 1
   expect_error(dat2_1 <- resample_sumstats(dat = dat2,
                                            R_LD = list(A1, A2),

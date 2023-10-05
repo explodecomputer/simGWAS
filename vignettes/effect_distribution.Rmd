@@ -29,7 +29,6 @@ random values demonstrated in this vigentte.
 
 ## Default Behavior
 
-
 The default behavior of `sim_mv` is to sample effect variants randomly by first randomly 
 selecting direct effect variants and then choosing the standardized effect size of these variants from 
 a normal distribution with mean zero appropriately chosen variance.
@@ -55,7 +54,6 @@ Below, we plot the distribution of the standardized and per-allele effects.
 Note that in this simulation, `direct_SNP_effects_joint` and `beta_joint` are
 the same because there is only one trait.
 
-
 ```{r}
 sum(sim_dat1$direct_SNP_effects_joint != 0)
 
@@ -75,10 +73,42 @@ curve(dnorm(x, sd = sqrt(0.3/1000)), add = T)
 ```
 
 
+Note also that there is no strong relationship between the allele frequency and the effect size (plotting below SNPs with non-zero effects)
+
+```{r}
+with(sim_dat1, plot(direct_SNP_effects_joint[beta_joint != 0] ~ snp_info$AF[beta_joint != 0]))
+```
+
+However, specifying the selection coefficient argument `S` is an option to draw effect estimates with respect to allele frequency, e.g. negative selection
+
+```{r}
+sim_dat1a <- sim_mv(G = 1,
+                   J = 50000,
+                   N = 0,  
+                   h2 = 0.3, 
+                   pi = 1000/50000, 
+                   af = function(n){rbeta(n, 1, 5)},
+                   S = -1)
+with(sim_dat1a, plot(direct_SNP_effects_joint[beta_joint != 0] ~ snp_info$AF[beta_joint != 0]))
+```
+
+Or positive selection
+
+```{r}
+sim_dat1b <- sim_mv(G = 1,
+                   J = 50000,
+                   N = 0,  
+                   h2 = 0.3, 
+                   pi = 1000/50000, 
+                   af = function(n){rbeta(n, 1, 5)},
+                   S = 1)
+with(sim_dat1b, plot(direct_SNP_effects_joint[beta_joint != 0] ~ snp_info$AF[beta_joint != 0]))
+```
+
 ## Controlling which Variants are Effect Variants
 
 The `pi` argument to `sim_mv` gives the probability that each variant is an effect variant. 
-This can be a scalar in which calse the probability is the same for all variants and all traits,
+This can be a scalar in which case the probability is the same for all variants and all traits,
 a vector giving a different probability for each trait or $J \times M$ matrix. 
 If `pi` has matrix format then  `pi[j,m]` gives the probability than
 variant `j` has a direct effect on trait `m`. To make the set of 
@@ -140,26 +170,6 @@ snp_dat <- data.frame(maf = maf,
            mutate(eff_prob = n_eff/n)
 snp_dat$maf_min <- x[snp_dat$maf_min]
 with(snp_dat, plot(maf_min, eff_prob))
-```
-
-```{r}
-load_all()
-sim_dat3 <- sim_mv(G = 1,
-                   J = 50000,
-                   N = 60000,  
-                   h2 = 0.8, 
-                   pi = 1)
-                   
-                   ,
-                   af = af,
-                   S = 0)
-
-with(sim_dat3, sum(beta_hat[,1]^2 * snp_info$AF * (1-snp_info$AF)))
-with(sim_dat3, sum(beta_hat[,1]^2))
-
-str(sim_dat3)
-hist(sim_dat3$beta_hat)
-with(sim_dat3, plot(abs(beta_hat) ~ snp_info$AF))
 ```
 
 ## Controlling Effect Size Distribution
@@ -249,29 +259,6 @@ x <- myf(1e5, sd = sqrt(0.2))
 sum(x^2) # should be about 0.2
 ```
 
-
-### Including selection coefficients
-
-The mixture of normals can also be adapted to use the Bayes S method for relating allele frequencies and effect sizes by the selection coefficient S
-
-$$
-E(h^2_j) = x(2f_j(1-f_j))^S
-$$
-
-
-```{r}
-set.seed(10)
-myf <- mixnorm_to_scale_fam(sigma = c(1), pi = c(0.3), S=0.1, )
-sim_dat8 <- sim_mv(G = 1,
-                    J = 50000, 
-                    N = 0, 
-                    h2 = 0.3, 
-                    pi = 1, 
-                    snp_effect_function = myf,
-                    af = function(n){rbeta(n, 1, 5)},
-                    snp_info = my_snp_info)
-```
-
 ### Providing a fixed list of relative effect sizes
 
 If you want to provide a specific fixed list of relative variant effects, you can do this using the helper function `fixed_to_scalefam`.  Effects will still be scaled to give the desired heritability, however the relative sizes of effects will be given by a fixed list, repeated as many times as necessary to give the desired number of variants. For example, the function below provides two effect sizes one twice as big as the other. 
@@ -329,12 +316,9 @@ sim_dat6$beta_joint
 sim_dat6$Sigma_G
 ```
 
-
-
 ### Different effect distributions for different traits
 
 The `snp_effect_function` parameter can accept a list with length equal to the number of traits. In this case, the direct effect variants for each trait will be drawn from the corresponding element of `snp_effect_function`. If `snp_effect_function` is a list, each element should either be an acceptable function or the string `normal`. The code below generates data for two independent traits. The effects for the first trait are normally distributed. The effects for the second trait take on one of two values as in the previous section. 
-
 
 ```{r}
 myf <- fixed_to_scale_fam(c(1, 2))
@@ -345,7 +329,6 @@ sim_dat7 <- sim_mv(G = 2,
                    pi = 5000/50000, 
                    snp_effect_function = list('normal', myf),
                    af = function(n){rbeta(n, 1, 5)})
-
 
 ```
 
@@ -364,7 +347,7 @@ hist(std_effects2[!std_effects2 == 0], breaks = 30, freq = F, main = "Standardiz
 
 ### Example Using Fixed Effects
 
-Below is some code that combines some of the effect size specification options we have seen to simulate GWAS data for one LD block and two traits. The first trait will have two effect variants that have equal standardized effect size. The second trait has two effect variants with different effect sizes. One pair of variants co-localizes across traits. Simulations of this type could be used to test co-localization methods.  Since we are looking at only one block, we will set the heritability of the block to be a reasonable amount of heritability provided by two variants, 6e-4 for one trait and 1e-3 for the other. 
+Below is some code that combines some of the effect size specification options we have seen to simulate GWAS data for one LD block and two traits. The first trait will have two effect variants that have equal standardized effect size. The second trait has two effect variants with different effect sizes. One pair of variants co-localizes across traits. Simulations of this type could be used to test co-localization methods. Since we are looking at only one block, we will set the heritability of the block to be a reasonable amount of heritability provided by two variants, 6e-4 for one trait and 1e-3 for the other. 
 
 Examine the LD data
 
@@ -472,7 +455,7 @@ passed to this function will include the information given to the `snp_info` arg
 
 
 ```{r}
-myf <- function(n, sd, snp_info){
+myf <- function(n, sd, snp_info, S){
   stopifnot(nrow(snp_info) == n)
   # expected heritability explained by each variant up to a scalar
   s2 <- with(snp_info, ((AF*(1-AF))^0.75)*(0.1*A1 + 0.13*A2 + 0.9))

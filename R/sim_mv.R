@@ -25,6 +25,7 @@
 #'@param snp_effect_function Optional function to generate variant effect distributions.
 #'\code{snp_effect_function} can be a single function
 #' or list of functions of length equal to the number of traits.
+#'@param S Vector of selection coefficients for each treat according to the Bayes S model, length M. Default = NULL, which defaults to neutral model. \code{af} must be supplied if S is to be used
 #'@param snp_info Optional \code{data.frame} of variant information to be passed to variant effect functions. If \code{R_LD} is
 #' specified, \code{snp_info} should have number of rows equal to the size of the supplied LD pattern. Otherwise \code{snp_info}
 #' should have \code{J} rows.

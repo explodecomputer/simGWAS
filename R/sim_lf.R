@@ -1,85 +1,85 @@
 
-#See simulating_data.Rmd for explanation
-#'@title Simulate summary statistics
-#'@description Simulate summary statistics from a specified factor structure
-#'@param F_mat factor matrix M by K (M = number of traits, K = number of factors)
-#'@param N GWAS sample size. N can be a scalar, vector, or matrix. If N is a scalar, all GWAS have the same sample size
-#'and there is no overlap between studies. If N is a vector, each element of N specifies the sample size of the corresponding
-#'GWAS and there is no overlap between studies. If N is a matrix, N_ii specifies the sample size of study i
+# See simulating_data.Rmd for explanation
+#' @title Simulate summary statistics
+#' @description Simulate summary statistics from a specified factor structure
+#' @param F_mat factor matrix M by K (M = number of traits, K = number of factors)
+#' @param N GWAS sample size. N can be a scalar, vector, or matrix. If N is a scalar, all GWAS have the same sample size
+#' and there is no overlap between studies. If N is a vector, each element of N specifies the sample size of the corresponding
+#' GWAS and there is no overlap between studies. If N is a matrix, N_ii specifies the sample size of study i
 #' and N_ij specifies the number of samples present in both study i and study j. The elements of N must be positive
 #' but non-integer values will not generate an error.
-#'@param J Total number of SNPs to generate
-#'@param h2_trait Heritability of each trait. Length M vector.
-#'@param omega Proportion of trait heritability mediated by factors. Length M vector.
-#'@param h2_factor Heritability of each factor. Length K vector.
-#'@param pi_L Proportion of non-zero elements in L_k. Length K factor
-#'@param pi_theta Proportion of non-zero elements in theta. Scalar or length M vector.
-#'@param est_s If TRUE, return estimates of se(beta_hat).
-#'@param R_E Correlation between environmental trait components not mediated by factors. M by M pd matrix.
-#'@param R_obs Observational correlation between traits. M by M pd matrix. At most one of R_E and R_obs can be specified.
+#' @param J Total number of SNPs to generate
+#' @param h2_trait Heritability of each trait. Length M vector.
+#' @param omega Proportion of trait heritability mediated by factors. Length M vector.
+#' @param h2_factor Heritability of each factor. Length K vector.
+#' @param pi_L Proportion of non-zero elements in L_k. Length K factor
+#' @param pi_theta Proportion of non-zero elements in theta. Scalar or length M vector.
+#' @param est_s If TRUE, return estimates of se(beta_hat).
+#' @param R_E Correlation between environmental trait components not mediated by factors. M by M pd matrix.
+#' @param R_obs Observational correlation between traits. M by M pd matrix. At most one of R_E and R_obs can be specified.
 #' @param R_LD List of LD blocks. R_LD should have class \code{list}.
 #' Each element of R_LD can be either a) a matrix, b) a sparse matrix (class \code{dsCMatrix}) or c) an eigen decomposition (class \code{eigen}).
 #' All elements should be correlation matrices, meaning that they have 1 on the diagonal and are positive definite.
 #' @param af Optional vector of allele frequencies. If R_LD is not supplied, af can be a scalar, vector or function.
-#'If af is a function it should take a single argument (n) and return a vector of n allele frequencies (See Examples).
-#'If R_LD is supplied, af must be a vector with length equal to the size of the supplied LD pattern (See Examples).
+#' If af is a function it should take a single argument (n) and return a vector of n allele frequencies (See Examples).
+#' If R_LD is supplied, af must be a vector with length equal to the size of the supplied LD pattern (See Examples).
 #' @param S Vector of selection coefficients for each treat according to the Bayes S model, length M. Default = NULL, which defaults to neutral model. \code{af} must be supplied if S is to be used
-#'@param sporadic_pleiotropy Allow sporadic pleiotropy between traits. Defaults to TRUE.
-#'@param h2_exact If TRUE, the heritability of each trait will be exactly h2.
-#'@param pi_exact If TRUE, the number of direct effect SNPs for each trait will be exactly equal to round(pi*J).
-#'@param snp_effect_function_L,snp_effect_function_theta Optional function to generate variant effects in \code{L} or \code{theta}.
-#'\code{snp_effect_function_L/theta} can be a single function
+#' @param sporadic_pleiotropy Allow sporadic pleiotropy between traits. Defaults to TRUE.
+#' @param h2_exact If TRUE, the heritability of each trait will be exactly h2.
+#' @param pi_exact If TRUE, the number of direct effect SNPs for each trait will be exactly equal to round(pi*J).
+#' @param snp_effect_function_L,snp_effect_function_theta Optional function to generate variant effects in \code{L} or \code{theta}.
+#' \code{snp_effect_function_L/theta} can be a single function
 #' or list of functions of length equal to the number of factors/number of traits.
 #' @param snp_info Optional \code{data.frame} of variant information to be passed to variant effect functions. If \code{R_LD} is
 #' specified, \code{snp_info} should have number of rows equal to the size of the supplied LD pattern. Otherwise \code{snp_info}
 #' should have \code{J} rows.
-#'@details
-#'This function will generate GWAS summary statistics for M traits with K common factors.
-#'The matrix F_mat provides the effects of each factor on each trait, \code{F_mat[i,j]}
-#'gives the effect of factor j on trait i. The rows of \code{F_mat} will be scaled in order
-#'to provide desired proportion of hertiability of each trait explained by factors but the relative
-#'size and sign of elements within rows will be retained.
-#'
-#'A random factor matrix can be generated using \code{generate_random_F} (see Examples).
-#'
-#'It is possible to supply a non-feasible set of parameters.
-#'Usually this occurs if the heritability of the factors is low but the heritability
-#'of the traits is high leading to a contradiction. The function will return an error if this happens.
-#'
-#'Trait covariance: Each trait is composed of four independent components, the genetic component mediated by factors,
-#'the environmental component mediated by factors, the genetic component not mediated by factors,
-#'and the environmental component not mediated by factors. Therefore, the total trait covariance can be decomposed into
-#'the sum of four corresponding covariance matrices.
-#'
-#'Cov(T) = Sigma_FG + Sigma_FE + Sigma_GDir + Sigma_EDir
-#'
-#'We assume that all cross-trait genetic sharing is explained by the factors so that Sigma_GDir is diagonal.
-#'Each factor is a sum of a genetic component and an environmental components and factors are independent
-#'(both genetic and environmental components) are independent across factors. This means that
-#'Sigma_FG = F S_{FG} F^T and Sigma_FE = F S_{FE} F^T where S_{FG} and S_{FE} are diagonal matrices. The parameter R_E specifies
-#'the correlation of the residual environmental component (i.e. R_E = cov2cor(Sigma_{EDir}).
-#'Alternatively, if \code{R_obs} is specified, Sigma_EDir will be chosen to give the desired observational correlation.
+#' @details
+#' This function will generate GWAS summary statistics for M traits with K common factors.
+#' The matrix F_mat provides the effects of each factor on each trait, \code{F_mat[i,j]}
+#' gives the effect of factor j on trait i. The rows of \code{F_mat} will be scaled in order
+#' to provide desired proportion of hertiability of each trait explained by factors but the relative
+#' size and sign of elements within rows will be retained.
+#' 
+#' A random factor matrix can be generated using \code{generate_random_F} (see Examples).
+#' 
+#' It is possible to supply a non-feasible set of parameters.
+#' Usually this occurs if the heritability of the factors is low but the heritability
+#' of the traits is high leading to a contradiction. The function will return an error if this happens.
+#' 
+#' Trait covariance: Each trait is composed of four independent components, the genetic component mediated by factors,
+#' the environmental component mediated by factors, the genetic component not mediated by factors,
+#' and the environmental component not mediated by factors. Therefore, the total trait covariance can be decomposed into
+#' the sum of four corresponding covariance matrices.
+#' 
+#' Cov(T) = Sigma_FG + Sigma_FE + Sigma_GDir + Sigma_EDir
+#' 
+#' We assume that all cross-trait genetic sharing is explained by the factors so that Sigma_GDir is diagonal.
+#' Each factor is a sum of a genetic component and an environmental components and factors are independent
+#' (both genetic and environmental components) are independent across factors. This means that
+#' Sigma_FG = F S_{FG} F^T and Sigma_FE = F S_{FE} F^T where S_{FG} and S_{FE} are diagonal matrices. The parameter R_E specifies
+#' the correlation of the residual environmental component (i.e. R_E = cov2cor(Sigma_{EDir}).
+#' Alternatively, if \code{R_obs} is specified, Sigma_EDir will be chosen to give the desired observational correlation.
 
-#'In the returned object, \code{Sigma_G} is equal to the sum of the two genetic covariance components and \code{Sigma_E}
-#'is equal to the sum of the two environmental components.
-#'\code{R} gives the overall trait correlation matrix multiplied by the overlap proportion matrix,
-#'which is equal to the correlation in the error terms of \code{beta_hat} (See Examples).
-#'
-#'@examples
-#'myF <- generate_random_F(K = 3, M = 10, nz_factor = c(2, 3, 2),
+#' In the returned object, \code{Sigma_G} is equal to the sum of the two genetic covariance components and \code{Sigma_E}
+#' is equal to the sum of the two environmental components.
+#' \code{R} gives the overall trait correlation matrix multiplied by the overlap proportion matrix,
+#' which is equal to the correlation in the error terms of \code{beta_hat} (See Examples).
+#' 
+#' @examples
+#' myF <- generate_random_F(K = 3, M = 10, nz_factor = c(2, 3, 2),
 #'                         omega = rep(0.8, 10), h2_trait = rep(0.6, 10), pad = TRUE)
-#'dat <- sim_lf(myF, N = 10000, J = 20000, h2_trait = rep(0.6, 10),
+#' dat <- sim_lf(myF, N = 10000, J = 20000, h2_trait = rep(0.6, 10),
 #'                       omega = rep(0.8, 10), pi_L = 0.1, pi_theta = 0.1)
-#'
-#'myF <- diag(2)
-#'N <- matrix(c(10000, 8000, 8000, 10000), nrow = 2)
-#'R_E <- matrix(c(1, 0.6, 0.6, 1), nrow = 2)
-#'dat <- sim_lf(F_mat = myF, N = N, J = 20000, h2_trait = rep(0.6, 2), 
+#' 
+#' myF <- diag(2)
+#' N <- matrix(c(10000, 8000, 8000, 10000), nrow = 2)
+#' R_E <- matrix(c(1, 0.6, 0.6, 1), nrow = 2)
+#' dat <- sim_lf(F_mat = myF, N = N, J = 20000, h2_trait = rep(0.6, 2), 
 #'              omega = rep(1, 2), h2_factor = rep(1, 2),
 #'              pi_L = 0.1, pi_theta = 0.1, R_E = R_E)
-#'dat$R
-#'cor(dat$beta_hat[,1]-dat$beta_joint[,1], dat$beta_hat[,2]-dat$beta_joint[,2])
-#'@export
+#' dat$R
+#' cor(dat$beta_hat[,1]-dat$beta_joint[,1], dat$beta_hat[,2]-dat$beta_joint[,2])
+#' @export
 sim_lf <- function(F_mat,
                    N,
                    J,
