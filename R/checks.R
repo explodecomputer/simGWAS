@@ -383,7 +383,10 @@ check_snp_effect_function <- function(snp_effect_function, snp_info = NULL, S = 
         if(all(c("S", "snp_info") %in% names(args))) {
           af <- args[["snp_info"]][["AF"]]
           S <- args[["S"]]
-          rnorm(n = n, mean = 0, sd = sqrt((2*af * (1-af))^S)) %>% scale() %>% drop() %>% {. * sd/sqrt(n)}
+          rnorm(n = n, mean = 0, sd = sqrt((2*af * (1-af))^S)) %>% 
+            scale() %>% 
+            drop() %>% 
+            {. * sd/sqrt(n)}
         } else {
           rnorm(n = n, mean = 0, sd = sd/sqrt(n))
         }

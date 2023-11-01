@@ -68,8 +68,6 @@ gen_bhat_from_b <- function(b_joint,
                             J = J,
                             af = af)
 
-    beta_joint <- A*b_joint
-
     if(output_geno_scale=="allele"){
       snp_info = data.frame(SNP = seq(J), AF = af)
       sx <- sqrt(2*af*(1-af))
@@ -77,6 +75,19 @@ gen_bhat_from_b <- function(b_joint,
       snp_info  <- data.frame(SNP = seq(J), AF = NA)
       sx <- rep(1, J)
     }
+
+    # Originally the beta is converting to allele scale by dividing by snp variance
+    # However this imposes a selection coefficient of S=-1.
+    # Alternatively, calculate total genetic variance, and then obtain scalar that would adjust variance to be h2 * outout_pheno_sd
+
+    # beta_joint <- A*b_joint
+    h2_target <- compute_h2(b_joint = b_joint,
+                            geno_scale = "sd",
+                            pheno_sd = input_pheno_sd,
+                            R_LD = R_LD, af = af)
+    vg <- colSums((b_joint * sx)^2)
+    beta_joint <- scale_betas(b_joint, output_pheno_sd, vg, h2_target)
+
 
     # se(beta_hat)_{ij} \approx sd(y_j)/(sqrt(N_j)*sd(x_i))
     if(length(nnz$nonzero_ix) != 0){
@@ -150,28 +161,40 @@ gen_bhat_from_b <- function(b_joint,
                           output_pheno_sd = 1,
                           J = J,
                           af = snp_info$AF)
+  temp <- b_joint
   b_joint <- Astd*b_joint
-
+  plot(temp ~ b_joint)
   # beta_marg_std = R beta_joint (S R S^{-1} = R since S is just diag(1/sqrt(N)))
   b_marg <- lapply(seq(nb), function(i){
     tcrossprod(ld_mat[[block_info$block_index[i]]], t(b_joint[start_ix[i]:end_ix[i], ,drop =F]))
   }) %>% do.call( rbind, .)
 
   # convert to final scale
-  Aunstd <- get_convert_matrix(input_geno_scale = "sd",
-                               output_geno_scale = output_geno_scale,
-                               input_pheno_sd = 1,
-                               output_pheno_sd = output_pheno_sd,
-                               J = J,
-                               af = snp_info$AF)
+  # Aunstd <- get_convert_matrix(input_geno_scale = "sd",
+  #                              output_geno_scale = output_geno_scale,
+  #                              input_pheno_sd = 1,
+  #                              output_pheno_sd = output_pheno_sd,
+  #                              J = J,
+  #                              af = snp_info$AF)
 
-  beta_marg <- Aunstd*b_marg
-  beta_joint <- Aunstd*b_joint
+  # beta_marg <- Aunstd*b_marg
+  # beta_joint <- Aunstd*b_joint
   if(output_geno_scale == "allele"){
     sx <- with(snp_info, sqrt(2*AF*(1-AF)))
   }else{
     sx <- rep(1, J)
   }
+
+  h2_target <- compute_h2(b_joint = b_joint,
+                          geno_scale = "sd",
+                          pheno_sd = input_pheno_sd,
+                          R_LD = R_LD, af = af)
+  vg <- colSums((b_joint * sx)^2)
+  beta_joint <- scale_betas(b_joint, output_pheno_sd, vg, h2_target)
+  beta_marg <- scale_betas(b_marg, output_pheno_sd, vg, h2_target)
+
+
+
   E_LD_Z <- Zm <- matrix(nrow = J, ncol = M)
   if(length(nnz$nonzero_ix) > 0){
     se_beta_hat[,nnz$nonzero_ix] <- kronecker(1/sx, output_pheno_sd[nnz$nonzero_ix]/sqrt(nnz$N)) |> matrix(nrow = J, byrow = T)
@@ -212,6 +235,12 @@ gen_bhat_from_b <- function(b_joint,
     ret$s_estimate <- s_estimate
   }
   return(ret)
+}
+
+scale_betas <- function(b_joint, output_pheno_sd, vg, h2_target)
+{      
+  scale <- sqrt((h2_target/vg * output_pheno_sd^2))
+  return(t(t(b_joint)*scale))
 }
 
 compute_R_times_mat <- function(R_LD, af, J, X){

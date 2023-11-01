@@ -231,6 +231,7 @@ sim_lf <- function(F_mat,
                                  af = af,
                                  S = S)
 
+  print(str(theta))
 
 
   #Generate L
@@ -247,9 +248,15 @@ sim_lf <- function(F_mat,
                                  S = S)
 
 
+
   # Compute standardized effects
   # Since phenos are scaled to variance 1, sqrt(N_m)*beta_{j,m} = z_{j,m}
   beta_std = L_mat %*% t(F_mat) + theta
+  
+  # par(mfrow=c(2,2))
+  str(beta_std)
+  str(af)
+  # plot(beta_std[,1] ~ af)
 
   #Compute row (trait) covariance
   # genetic trait covariance
@@ -308,6 +315,11 @@ sim_lf <- function(F_mat,
                                output_pheno_sd = 1)
 
 
+  print(str(sum_stats))
+  # plot(sum_stats$beta_marg[,1] ~ beta_std)
+  # plot(sum_stats$beta_marg[,1] ~ af)
+  print(sum(sum_stats$beta_marg^2 * 2 * af * (1-af)))
+  print(sum(beta_std^2))
   sum_stats$F_mat <- F_mat
   sum_stats$Sigma_G <- Sigma_G
   sum_stats$Sigma_E <- Sigma_FE + Sigma_E
@@ -332,6 +344,5 @@ sim_lf <- function(F_mat,
     sum_stats$theta_marg <- sum_stats$theta/sum_stats$sx
   }
   sum_stats <- structure(sum_stats, class = c("sim_lf", "list"))
-
   return(sum_stats)
 }

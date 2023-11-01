@@ -34,11 +34,12 @@ selecting direct effect variants and then choosing the standardized effect size 
 a normal distribution with mean zero appropriately chosen variance.
 Standardized effects are effects with units of change in outcome on SDs per unit increase in genotype SD.
 This procedure results 
-in  effect variants spread evenly throughout the genome and per-allele effect sizes that 
+in effect variants spread evenly throughout the genome and per-allele effect sizes that 
 are inversely proportional to $\sqrt{2 f_j (1-f_j)}$.
 
 We demonstrate this by simulating data for only one trait. We will set $N = 0$ since we don't need 
 the summary statistics for this demonstration.
+
 ```{r}
 set.seed(1)
 sim_dat1 <- sim_mv(G = 1,
@@ -83,12 +84,12 @@ However, specifying the selection coefficient argument `S` is an option to draw 
 
 ```{r}
 sim_dat1a <- sim_mv(G = 1,
-                   J = 50000,
+                    J = 50000,
                    N = 0,  
                    h2 = 0.3, 
-                   pi = 1000/50000, 
-                   af = function(n){rbeta(n, 1, 5)},
-                   S = -1)
+                   pi = 50000/50000, 
+                   af = function(n){rbeta(n, 1, 1)},
+                   S = 1)
 with(sim_dat1a, plot(direct_SNP_effects_joint[beta_joint != 0] ~ snp_info$AF[beta_joint != 0]))
 ```
 
