@@ -286,7 +286,6 @@ Effect size arguments `gamma`, `tau_xz`, and `tau_yz` are given as the signed pr
 So if `gamma = -0.3`, The direct effect of $X$ explains 30\% of the variance of $Y$ and the 
 effect of $X$ on $Y$ is negative. 
 
-
 For example, the code
 
 ```{r}
@@ -298,7 +297,6 @@ myG <- xyz_to_G(tau_xz = c(0.1, -0.15, 0.2, 0.3),
 ```
 
 generates the matrix corresponding to the graph below:
-
 
 ```{r, echo=FALSE, fig.align='center', fig.width = 5}
 myd <- melt(myG) %>%
@@ -347,6 +345,7 @@ We can also use the output to understand which variants have direct effects on e
 Direct SNP effects are always independent across traits while total SNP effects are the sum of direct effects and indirect effects mediated by other traits. We will make some plots to see the difference.
 
 First we plot direct SNP effects on $Z$ vs direct SNP effects on $W$
+
 ```{r}
 plot(sim_dat1$direct_SNP_effects_joint[,3], sim_dat1$direct_SNP_effects_joint[,4], 
      xlab = "Direct Z effect", ylab = "Direct W effect")
@@ -381,7 +380,7 @@ sim_dat2$geno_scale
 head(sim_dat2$snp_info)
 ```
 
-Check the relationship between allele frequency and effect size
+In the default case there is no relationship between allele frequency and effect size
 
 ```{r}
 with(sim_dat2, plot(beta_joint[,1] ~ snp_info$AF))
@@ -390,7 +389,7 @@ with(sim_dat2, plot(beta_joint[,1] ~ snp_info$AF))
 This represents a neutral selection model by default, which can be changed by specifying the selection parameter `S`
 
 ```{r}
-sim_dat2a <- sim_mv(G = G,
+sim_dat2a <- sim_mv(G = matrix(0, 4, 4),
                   N = 50000, 
                   J = 10000, 
                   h2 = c(0.3, 0.3, 0.5, 0.4), 
@@ -434,12 +433,15 @@ length(AF)
 ```
 
 The LD pattern covers 19,490 SNPs, equal to the length of the `AF` vector. 
- The built-in LD pattern corresponds to a density of about 1.2 million variants per genome. However, for this example, we will generate data for only 100k variants. This means that causal effects will be denser than they might be in more realistic data with the same number of effect variants.
+
+The built-in LD pattern corresponds to a density of about 1.2 million variants per genome. However, for this example, we will generate data for only 100k variants. This means that causal effects will be denser than they might be in more realistic data with the same number of effect variants.
+
+Note that 100k variants can be generated from an LD pattern for only 19k SNPs because `sim_mv` will automatically repeat the LD pattern to obtain the specified number of SNPs specified for `J`.
 
 ```{r}
 set.seed(10)
 sim_dat1_LD <- sim_mv(G = G,
-                      J = 3e4, 
+                      J = 1e5, 
                       N = 50000, 
                       h2 = c(0.3, 0.3, 0.5, 0.4), 
                       pi = 0.01, 
@@ -457,21 +459,26 @@ abline(0, 1, lty = 2, lwd =2, col = "red")
 
 Variants with non-zero values of `beta_joint[,3]` have causal effects on $Z$ while those with non-zero values of `beta_marg[,3]` have non-zero marginal association with $Z$, meaning that they are in LD with at least one causal variant. In the plot, we see that many variants with no causal effect have non-zero marginal association, which is expected. The causal variants don't fall exactly on the red line because, multiple causal variants may fall into the same LD block.
 
+Note that there is no relationship between effects and allele frequencies by default
+
 ```{r}
 par(mfrow=c(2,2))
 for(i in 1:4) with(sim_dat1_LD, plot(beta_marg[,i] ~ snp_info$AF))
-sim_dat1_LD$Sigma_G
 ```
 
+The selection parameter can be specified:
+
 ```{r}
-sim_dat1_LD <- sim_mv(G = G,
-                      J = 3e4, 
+sim_dat1_LDa <- sim_mv(G = G,
+                      J = 1e5, 
                       N = 50000, 
                       h2 = c(0.3, 0.3, 0.5, 0.4), 
                       pi = 0.01, 
                       R_LD = ld_mat_list, 
                       af = AF, 
-                      S=c)
+                      S=c(-2, 4, 0.5, 0))
+par(mfrow=c(2,2))
+for(i in 1:4) with(sim_dat1_LDa, plot(beta_joint[,i] ~ snp_info$AF))
 ```
 
 ### LD-Pruning, LD-Proxies, and LD Matrix Extraction
@@ -497,6 +504,7 @@ pruned_set2 <- sim_ld_prune(dat = sim_dat1_LD,
                             pval_thresh = 1e-6)
 all.equal(pruned_set1, pruned_set2)
 ```
+
 `sim_ld_prune` returns a vector of indices corresponding to an LD-pruned set of variants. 
 
 The `sim_ld_proxy` function will return indices of LD-proxies (variants with LD above a given threshold) with a supplied set of variants. Here we extract proxies for a few arbitrary variants. The `return_mat` option will cause the function to return the LD matrix for the proxies as well as the indices of proxies
@@ -520,7 +528,6 @@ If the two GWAS have sample sizes $N_1$ and $N_2$ with $N_c$ overlapping samples
 $\hat{z}_{1j}$ and $\hat{z}_{2j}$, $z$-scores for variant $j$ in study 1 and study 2, is approximately $\frac{N_c}{\sqrt{N_1 N_2}} \rho_{1,2}$ where $\rho_{1,2}$ is the observational trait correlation (assuming the studies are conducted in the same super population). Below we describe how to specify the observational correlation and sample overlap.
 
 ### Specifying Sample Size and Sample Overlap
-
 
 The sample size argument, `N`, can be specified as a scalar, a vector, a matrix, or a data frame. Both the scalar and matrix specification indicate
 no overlapping samples between GWAS.
@@ -571,7 +578,6 @@ head(sim_dat2$s_estimate)
 In the model used by `simGWAS`, each trait has a direct genetic component, a direct environmental component, and components from effects of other traits in the DAG. For example, in the four trait DAG we have been working with, the underlying model really looks like this:
 
 ```{r, echo=FALSE, fig.align='center', fig.width = 5}
-
 n <- create_node_df(n = 12, label = c("X", "Y", "Z", "W", 
                                       "Gx", "Ex", "Gz", "Ez", 
                                       "Gy", "Ey", "Gw", "Ew"), 
@@ -602,7 +608,6 @@ sim_dat1$trait_corr
 ```
 
 The simulation data object contains four matrices that describe trait covarince, `Sigma_E`, the total environmental trait covariance, `Sigma_G` the total genetic trait covariance, `trait_corr`, the trait correlation equal to `Sigma_G + Sigma_E`, and `R`, the row correlation of `beta_hat`. `R` is equal to `trait_corr` scaled by the a matrix of sample overlap proportions. 
-
 
 `Sigma_G` is always determined by the DAG and the heritabilities.
 Currently, there are two ways to modify `Sigma_E`. The first is to specify `R_obs` which directly specifies the observational trait correlation (`trait_corr`). In some cases, it is possible to request an observational correlation matrix that is impossible. For example, in our example, $Z$ has a strong negative effect on $W$ so it is not possible that all four traits are mutually strongly positively correlated. We can get an error using
@@ -648,6 +653,7 @@ Note that the environmental covariance and observational trait correlation only 
 ```{r}
 sim_dat3$R
 ```
+
 By contrast, in `sim_dat2`, we did have sample overlap, so there is non-zero correlation between the summary statistics.
 
 ```{r}

@@ -231,8 +231,6 @@ sim_lf <- function(F_mat,
                                  af = af,
                                  S = S)
 
-  print(str(theta))
-
 
   #Generate L
   L_mat <- sample_effects_matrix(J = J, M = K,
@@ -253,11 +251,6 @@ sim_lf <- function(F_mat,
   # Since phenos are scaled to variance 1, sqrt(N_m)*beta_{j,m} = z_{j,m}
   beta_std = L_mat %*% t(F_mat) + theta
   
-  # par(mfrow=c(2,2))
-  str(beta_std)
-  str(af)
-  # plot(beta_std[,1] ~ af)
-
   #Compute row (trait) covariance
   # genetic trait covariance
   #Sigma_G <- F_mat %*% t(F_mat) + diag((1-omega)*h2_trait, nrow = M)
@@ -315,11 +308,6 @@ sim_lf <- function(F_mat,
                                output_pheno_sd = 1)
 
 
-  print(str(sum_stats))
-  # plot(sum_stats$beta_marg[,1] ~ beta_std)
-  # plot(sum_stats$beta_marg[,1] ~ af)
-  print(sum(sum_stats$beta_marg^2 * 2 * af * (1-af)))
-  print(sum(beta_std^2))
   sum_stats$F_mat <- F_mat
   sum_stats$Sigma_G <- Sigma_G
   sum_stats$Sigma_E <- Sigma_FE + Sigma_E

@@ -85,6 +85,10 @@ head(orig_dat$s_estimate)
 head(new_dat1$s_estimate)
 ```
 
+```{r}
+plot(orig_dat$beta_hat, new_dat1$beta_hat)
+```
+
 ### Resampling Individual Level Data from the Same Population
 
 We can also generate individual level data. For this we use the `resample_inddata` function. This function can be used to produce three types of output:
@@ -114,7 +118,7 @@ genos_only$X
 
 #### Generating Genotypes and Phenotypes
 
-To generate both genotypes and phenotypes, we need to include a `sim_mv` object that contains effect sizes. For our example, we will use the  data frame sample size format to indicate that three individuals have both phenotypes measured and seven have only one or the other measured. Note that we don't need to include the `J` argument because the `sim_mv` object contains all the necessary information. The vector of `M` phenotypes for each individual is simulated as $Y_i = Y_{G,i} + Y_{E,i}$ where $Y_{G,i}$ is the vector of genetic components computed from the genotypes and effect sizes stored in the original `sim_mv` object and $Y_{E,i}$ is a vector of environmental components sampled from a normal distribution with variance given by the `Sigma_E` matrix in the original `sim_mv` object.
+To generate both genotypes and phenotypes, we need to include a `sim_mv` object that contains effect sizes. For our example, we will use the data frame sample size format to indicate that three individuals have both phenotypes measured and seven have only one or the other measured. Note that we don't need to include the `J` argument because the `sim_mv` object contains all the necessary information. The vector of `M` phenotypes for each individual is simulated as $Y_i = Y_{G,i} + Y_{E,i}$ where $Y_{G,i}$ is the vector of genetic components computed from the genotypes and effect sizes stored in the original `sim_mv` object and $Y_{E,i}$ is a vector of environmental components sampled from a normal distribution with variance given by the `Sigma_E` matrix in the original `sim_mv` object.
 
 ```{r}
 N <- data.frame("trait_1" = c(1, 1, 0), "trait_2" = c(0, 1, 1), "N" = c(3, 3, 4))
@@ -122,7 +126,7 @@ new_ind_dat1 <- resample_inddata(N = N,
                                  dat = orig_dat, 
                                  R_LD = list(my_ld1), 
                                  af = af1, 
-                                 calc_sumstats = FALSE)
+                                 calc_sumstats = TRUE)
 ```
 
 Genotype data are stored in `new_ind_dat1$X` and phenotype data are in `new_ind_dat1$Y`. 
@@ -255,7 +259,6 @@ new_dat4$Sigma_E
 If for any reason we want to change the units of effects in an object produced by `sim_mv` or `resample_sumstats`, we can use `rescale_sumstats`. For example, in the code below, we rescale the effects in `orig_dat` to be on the per-SD scale. Note that by doing this, we will delete the allele frequency information in the `snp_info` table. This is because allele frequency is irrelevant for per-SD scaled effects.  To convert back to per-allele scale, we would need to supply the allele frequency.
 
 ```{r}
-
 orig_rescale1 <- rescale_sumstats(dat = orig_dat, 
                                   output_geno_scale = "sd")
 orig_rescale1$beta_joint
@@ -267,7 +270,6 @@ orig_rescale2 <- rescale_sumstats(dat = orig_rescale1,
                                   output_geno_scale = "allele", 
                                   af = orig_dat$snp_info$AF)
 orig_rescale2$beta_joint
-
 ```
 
 We can also change the scale of the outcomes.

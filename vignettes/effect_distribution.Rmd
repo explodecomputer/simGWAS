@@ -74,23 +74,19 @@ curve(dnorm(x, sd = sqrt(0.3/1000)), add = T)
 ```
 
 
-Note also that there is no strong relationship between the allele frequency and the effect size (plotting below SNPs with non-zero effects)
-
-```{r}
-with(sim_dat1, plot(direct_SNP_effects_joint[beta_joint != 0] ~ snp_info$AF[beta_joint != 0]))
-```
+Note also that there is no strong relationship between the allele frequency and the effect size by default. 
 
 However, specifying the selection coefficient argument `S` is an option to draw effect estimates with respect to allele frequency, e.g. negative selection
 
 ```{r}
 sim_dat1a <- sim_mv(G = 1,
-                    J = 50000,
+                   J = 50000,
                    N = 0,  
                    h2 = 0.3, 
-                   pi = 50000/50000, 
+                   pi = 1000/50000, 
                    af = function(n){rbeta(n, 1, 1)},
-                   S = 1)
-with(sim_dat1a, plot(direct_SNP_effects_joint[beta_joint != 0] ~ snp_info$AF[beta_joint != 0]))
+                   S = -1)
+with(sim_dat1a, plot(beta_joint[beta_joint != 0] ~ snp_info$AF[beta_joint != 0]))
 ```
 
 Or positive selection
@@ -101,9 +97,9 @@ sim_dat1b <- sim_mv(G = 1,
                    N = 0,  
                    h2 = 0.3, 
                    pi = 1000/50000, 
-                   af = function(n){rbeta(n, 1, 5)},
+                   af = function(n){rbeta(n, 1, 1)},
                    S = 1)
-with(sim_dat1b, plot(direct_SNP_effects_joint[beta_joint != 0] ~ snp_info$AF[beta_joint != 0]))
+with(sim_dat1b, plot(beta_joint[beta_joint != 0] ~ snp_info$AF[beta_joint != 0]))
 ```
 
 ## Controlling which Variants are Effect Variants

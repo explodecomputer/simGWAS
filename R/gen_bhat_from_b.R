@@ -61,13 +61,6 @@ gen_bhat_from_b <- function(b_joint,
     # compute sqrt(var(genos))
     af <- check_af(af, J)
 
-    A <- get_convert_matrix(input_geno_scale = input_geno_scale,
-                            output_geno_scale = output_geno_scale,
-                            input_pheno_sd = input_pheno_sd,
-                            output_pheno_sd = output_pheno_sd,
-                            J = J,
-                            af = af)
-
     if(output_geno_scale=="allele"){
       snp_info = data.frame(SNP = seq(J), AF = af)
       sx <- sqrt(2*af*(1-af))
@@ -80,6 +73,13 @@ gen_bhat_from_b <- function(b_joint,
     # However this imposes a selection coefficient of S=-1.
     # Alternatively, calculate total genetic variance, and then obtain scalar that would adjust variance to be h2 * outout_pheno_sd
 
+    # A <- get_convert_matrix(input_geno_scale = input_geno_scale,
+    #                         output_geno_scale = output_geno_scale,
+    #                         input_pheno_sd = input_pheno_sd,
+    #                         output_pheno_sd = output_pheno_sd,
+    #                         J = J,
+    #                         af = af)
+
     # beta_joint <- A*b_joint
     h2_target <- compute_h2(b_joint = b_joint,
                             geno_scale = "sd",
@@ -87,7 +87,6 @@ gen_bhat_from_b <- function(b_joint,
                             R_LD = R_LD, af = af)
     vg <- colSums((b_joint * sx)^2)
     beta_joint <- scale_betas(b_joint, output_pheno_sd, vg, h2_target)
-
 
     # se(beta_hat)_{ij} \approx sd(y_j)/(sqrt(N_j)*sd(x_i))
     if(length(nnz$nonzero_ix) != 0){
@@ -161,9 +160,7 @@ gen_bhat_from_b <- function(b_joint,
                           output_pheno_sd = 1,
                           J = J,
                           af = snp_info$AF)
-  temp <- b_joint
   b_joint <- Astd*b_joint
-  plot(temp ~ b_joint)
   # beta_marg_std = R beta_joint (S R S^{-1} = R since S is just diag(1/sqrt(N)))
   b_marg <- lapply(seq(nb), function(i){
     tcrossprod(ld_mat[[block_info$block_index[i]]], t(b_joint[start_ix[i]:end_ix[i], ,drop =F]))
